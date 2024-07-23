@@ -1,8 +1,19 @@
 from langchain_core.messages import AIMessage, HumanMessage
+from auth0_component import login_button
 from langchain_community.utilities import SQLDatabase
 import streamlit as st 
+from dotenv import load_dotenv
+load_dotenv()
+import os
 import requests
 
+st.set_page_config(page_title="Chat with QueryBot", page_icon=":speech_balloon:", layout="wide")
+
+clientId=os.getenv("AUTH0_CLIENT_ID")
+domain = os.getenv("AUTH0_DOMAIN")
+st.session_state.user = login_button(clientId=clientId, domain = domain)
+
+    
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = [
         AIMessage(content="Hello! I'm your assistant named QueryBot. Click on the settings icon then connect to the database and start chatting."),
@@ -17,7 +28,6 @@ def message_to_dict(message):
         "content": message.content
     }
 
-st.set_page_config(page_title="Chat with QueryBot", page_icon=":speech_balloon:", layout="wide")
 
 def init_database(user: str, password: str, host: str, port: str, database: str) -> SQLDatabase:
     db_uri = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
@@ -38,7 +48,7 @@ if st.session_state.show_settings:
     st.sidebar.write("This is a chat application. Select a database type, connect, and start chatting.")
 
     # Dropdown for selecting database type
-    db_type = st.sidebar.selectbox("Database Type", ["Select a database", "MySQL","MongoDB", "CSV", "Excel", "PDF", "Word", "TXT"])
+    db_type = st.sidebar.selectbox("Database Type", ["Select a database", "MySQL"])
 
     # Display connection fields based on selected database type
     if db_type == "MySQL":
@@ -63,63 +73,6 @@ if st.session_state.show_settings:
                 except Exception as e:
                     st.error('An error occured. Check database connection and credentials')
                     print(e)
-    elif db_type == "MongoDB":
-        st.sidebar.text_input("Host", value="localhost", key="Mongo_Host")
-        st.sidebar.text_input("Port", value="27017", key="Mongo_Port")
-        st.sidebar.text_input("User", value="admin", key="Mongo_User")
-        st.sidebar.text_input("Password", type="password", value="passcode", key="Mongo_Password")
-        st.sidebar.text_input("Database", value="ClientData", key="Mongo_Database")
-        if st.sidebar.button("Connect"):
-            with st.spinner("Connecting to database..."):
-                db = init_mongo_database(
-                    st.session_state["Mongo_User"],
-                    st.session_state["Mongo_Password"],
-                    st.session_state["Mongo_Host"],
-                    st.session_state["Mongo_Port"],
-                    st.session_state["Mongo_Database"]
-                )
-                st.session_state.db = db
-                st.success("Connected to database!")
-
-    elif db_type == "CSV":
-        csv_file = st.sidebar.file_uploader("Upload CSV file", type=["csv"])
-        if csv_file is not None:
-            with st.spinner("Loading CSV file..."):
-                df = load_csv(csv_file)
-                st.session_state.df = df
-                st.success("CSV file loaded!")
-
-    elif db_type == "Excel":
-        excel_file = st.sidebar.file_uploader("Upload Excel file", type=["xls", "xlsx"])
-        if excel_file is not None:
-            with st.spinner("Loading Excel file..."):
-                df = load_excel(excel_file)
-                st.session_state.df = df
-                st.success("Excel file loaded!")
-
-    elif db_type == "PDF":
-        pdf_file = st.sidebar.file_uploader("Upload PDF file", type=["pdf"])
-        if pdf_file is not None:
-            with st.spinner("Loading PDF file..."):
-                text = load_pdf(pdf_file)
-                st.session_state.text = text
-                st.success("PDF file loaded!")
-
-    elif db_type == "Word":
-        word_file = st.sidebar.file_uploader("Upload Word file", type=["doc", "docx"])
-        if word_file is not None:
-            with st.spinner("Loading Word file..."):
-                text = load_word(word_file)
-                st.session_state.text = text
-                st.success("Word file loaded!")
-
-    elif db_type == "TXT":
-        txt_file = st.sidebar.file_uploader("Upload TXT file", type=["txt"])
-        if txt_file is not None:
-            with st.spinner("Loading TXT file..."):
-                text = load_txt(txt_file)
-                st.session_state.text = text
-                st.success("TXT file loaded!")
 
 
 # Main Title
