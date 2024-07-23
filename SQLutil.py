@@ -52,7 +52,6 @@ answer_prompt = PromptTemplate.from_template(
 def get_chain(dbinfo):
     db_uri = f"mysql+pymysql://{dbinfo['user']}:{dbinfo['password']}@{dbinfo['host']}:{dbinfo['port']}/{dbinfo['database']}"
     db= SQLDatabase.from_uri(db_uri)
-    print(db.get_usable_table_names())
     SQLChain = create_sql_query_chain(llm, db,prompt=sql_prompt)
     execute_query = QuerySQLDataBaseTool(db=db)
     rephrase_answer = answer_prompt | llm | StrOutputParser()
@@ -67,7 +66,6 @@ def get_chain(dbinfo):
 def invoke_chain(question,history,dbinfo):
     chain = get_chain(dbinfo)
     response = chain.invoke({"question": question,"message_history":history})
-    print(response)
     return response
 
 @app.route('/invoke', methods=['POST'])
