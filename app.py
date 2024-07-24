@@ -69,7 +69,6 @@ if st.session_state.show_settings:
                     )
                     if(db.get_usable_table_names()):
                         st.success("Connected to database!")   
-                        st.session_state.db = db 
                 except Exception as e:
                     st.error('An error occured. Check database connection and credentials')
                     print(e)
