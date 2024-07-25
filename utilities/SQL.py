@@ -1,5 +1,4 @@
 import os
-
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -12,10 +11,6 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 from operator import itemgetter
-
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
 
 llm = ChatGoogleGenerativeAI(model="gemini-pro",temperature=0)
 
@@ -67,24 +62,3 @@ def invoke_chain(question,history,dbinfo):
     chain = get_chain(dbinfo)
     response = chain.invoke({"question": question,"message_history":history})
     return response
-
-@app.route('/invoke', methods=['POST'])
-def invoke():
-    data = request.get_json()
-    question = data.get('question')
-    history = data.get('history')
-    dbinfo = data.get('dbinfo')
-    
-    if not question or not history or not dbinfo:
-        return jsonify({"error": "Missing required parameters"}), 400
-    
-    try:
-        response = invoke_chain(question, history, dbinfo)
-        return jsonify({"response": response})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(debug=True)
-    
-    

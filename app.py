@@ -1,5 +1,4 @@
 from langchain_core.messages import AIMessage, HumanMessage
-from auth0_component import login_button
 from langchain_community.utilities import SQLDatabase
 import streamlit as st 
 from dotenv import load_dotenv
@@ -8,10 +7,6 @@ import os
 import requests
 
 st.set_page_config(page_title="Chat with QueryBot", page_icon=":speech_balloon:", layout="wide")
-
-clientId=os.getenv("AUTH0_CLIENT_ID")
-domain = os.getenv("AUTH0_DOMAIN")
-st.session_state.user = login_button(clientId=clientId, domain = domain)
 
     
 if "chat_history" not in st.session_state:
@@ -118,7 +113,7 @@ if user_query:
                 }  
             }
             try:
-                res = requests.post("http://127.0.0.1:5000/invoke", json=payload)
+                res = requests.post("http://192.168.105.180:3000/invoke", json=payload)
                 res.raise_for_status()
                 response = res.json().get("response", "Sorry, I didn't understand that.")
             except requests.exceptions.RequestException as e:

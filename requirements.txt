@@ -7,4 +7,4 @@ langchain_community
 pymysql
 langfuse
 python-dotenv
-streamlit-auth0-component
+authlib
