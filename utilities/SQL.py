@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+import pandas as pd
+import ast
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.utilities import SQLDatabase
 from langchain.chains import create_sql_query_chain
@@ -35,7 +37,7 @@ sql_prompt=PromptTemplate.from_template(
 )
 
 answer_prompt = PromptTemplate.from_template(
-    """Given the following user question, previous messages for context, corresponding SQL query, and SQL result, answer the user question.
+    """Given the following user question, previous messages for context, corresponding SQL query, and SQL result, answer the user question.If the result from the database is a big table and is itself the answer no need to rephrase it or say it again.
 
     Question: {question}
     Message History:{message_history}
@@ -44,21 +46,23 @@ answer_prompt = PromptTemplate.from_template(
     Answer: """
 )
 
-def get_chain(dbinfo):
-    db_uri = f"mysql+pymysql://{dbinfo['user']}:{dbinfo['password']}@{dbinfo['host']}:{dbinfo['port']}/{dbinfo['database']}"
-    db= SQLDatabase.from_uri(db_uri)
-    SQLChain = create_sql_query_chain(llm, db,prompt=sql_prompt)
+def get_chain(db):
+    SQLChain = create_sql_query_chain(llm, db, prompt=sql_prompt)
     execute_query = QuerySQLDataBaseTool(db=db)
-    rephrase_answer = answer_prompt | llm | StrOutputParser()
-    chain = (
-        RunnablePassthrough.assign(query=SQLChain).assign(
-            result=itemgetter("query") | execute_query
-        )
-        | rephrase_answer
+    
+    chain = RunnablePassthrough.assign(
+        query=SQLChain
+    ).assign(
+        result=itemgetter("query") | execute_query
+    ).assign(
+        rephrasedAnswer= answer_prompt | llm | StrOutputParser()
     )
+
     return chain
 
-def invoke_chain(question,history,dbinfo):
-    chain = get_chain(dbinfo)
+def invoke_chain(question,history,db):
+    chain = get_chain(db)
     response = chain.invoke({"question": question,"message_history":history})
+    result_list = ast.literal_eval(response['result'])
+    response['result']=pd.DataFrame(result_list)
     return response

@@ -8,7 +8,7 @@ from authlib.integrations.flask_client import OAuth
 from dotenv import find_dotenv, load_dotenv
 from flask import Flask, redirect, render_template, session, url_for
 
-from utilities.SQL import invoke_chain
+
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -60,24 +60,6 @@ def logout():
 @app.route("/")
 def home():
     return render_template("home.html", session=session.get('user'), pretty=json.dumps(session.get('user'), indent=4))
-
-@app.route('/invoke', methods=['POST'])
-def invoke():
-    data = request.get_json()
-    question = data.get('question')
-    history = data.get('history')
-    dbinfo = data.get('dbinfo')
-    
-    if not question or not history or not dbinfo:
-        return jsonify({"error": "Missing required parameters"}), 400
-    
-    try:
-        response = invoke_chain(question, history, dbinfo)
-        return jsonify({"response": response})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=env.get("PORT", 3000))

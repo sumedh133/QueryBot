@@ -8,3 +8,4 @@ pymysql
 langfuse
 python-dotenv
 authlib
+pymongo
