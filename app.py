@@ -1,8 +1,12 @@
+from dotenv import load_dotenv,find_dotenv
+ENV_FILE = find_dotenv()
+if ENV_FILE:
+    load_dotenv(ENV_FILE)
+
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_community.utilities import SQLDatabase
 import streamlit as st 
-from dotenv import load_dotenv
-load_dotenv()
+import os
 
 from utilities.SQL import invoke_chain
 

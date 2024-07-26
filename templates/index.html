@@ -61,7 +61,7 @@
                   <i class="fa fa-search" aria-hidden="true"></i>
                 </button>
               </form>
-              <a href="#" id="loginBtn">
+              <a href="{{ url_for('login') }}" id="loginBtn">
                 <span>Login/SignUp</span>
               </a>
             </div>
@@ -86,7 +86,7 @@
                     <p>
                       QueryBot </p>
                     <div class="btn-box">
-                      <a href="read.html" class="btn-1">
+                      <a href="{{ url_for('aboutUs') }}" class="btn-1">
                         Read More
                       </a>
                     </div>

@@ -1,6 +1,8 @@
 import os
-from dotenv import load_dotenv
-load_dotenv()
+from dotenv import load_dotenv,find_dotenv
+ENV_FILE = find_dotenv()
+if ENV_FILE:
+    load_dotenv(ENV_FILE)
 
 import pandas as pd
 import ast
@@ -18,9 +20,9 @@ llm = ChatGoogleGenerativeAI(model="gemini-pro",temperature=0)
 
 from langfuse.callback import CallbackHandler
 langfuse_handler = CallbackHandler(
-    secret_key=os.getenv('langfuse_secret_key'),
-    public_key=os.getenv('langfuse_public_key'),
-    host=os.getenv('langfuse_host'), 
+    secret_key=os.getenv('LANGFUSE_SECRET_KEY'),
+    public_key=os.getenv('LANGFUSE_PUBLIC_KEY'),
+    host=os.getenv('LANGFUSE_HOST'), 
 )
 
 sql_prompt=PromptTemplate.from_template(
