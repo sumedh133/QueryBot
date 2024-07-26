@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv,find_dotenv
+from dotenv import load_dotenv, find_dotenv
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
@@ -16,7 +16,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 from operator import itemgetter
 
-llm = ChatGoogleGenerativeAI(model="gemini-pro",temperature=0)
+llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
 
 from langfuse.callback import CallbackHandler
 langfuse_handler = CallbackHandler(
@@ -25,7 +25,7 @@ langfuse_handler = CallbackHandler(
     host=os.getenv('LANGFUSE_HOST'), 
 )
 
-sql_prompt=PromptTemplate.from_template(
+sql_prompt = PromptTemplate.from_template(
     '''Given an input question and previous messages for context first create a syntactically correct {dialect} query to run. Do not put the query you make in markdowns as sql, keep it as simple text. Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per SQLite.
 
     Question: {input}
@@ -39,7 +39,7 @@ sql_prompt=PromptTemplate.from_template(
 )
 
 answer_prompt = PromptTemplate.from_template(
-    """Given the following user question, previous messages for context, corresponding SQL query, and SQL result, answer the user question.If the result from the database is a big table and is itself the answer no need to rephrase it or say it again.
+    """Given the following user question, previous messages for context, corresponding SQL query, and SQL result, answer the user question. If the result from the database is a big table and is itself the answer no need to rephrase it or say it again.
 
     Question: {question}
     Message History:{message_history}
@@ -48,23 +48,27 @@ answer_prompt = PromptTemplate.from_template(
     Answer: """
 )
 
-def get_chain(db):
-    SQLChain = create_sql_query_chain(llm, db, prompt=sql_prompt)
-    execute_query = QuerySQLDataBaseTool(db=db)
-    
-    chain = RunnablePassthrough.assign(
-        query=SQLChain
-    ).assign(
-        result=itemgetter("query") | execute_query
-    ).assign(
-        rephrasedAnswer= answer_prompt | llm | StrOutputParser()
-    )
+class SQLChain:
+    def __init__(self, db):
+        self.db = db
+        self.chain = self.create_chain()
 
-    return chain
+    def create_chain(self):
+        SQLChain = create_sql_query_chain(llm, self.db, prompt=sql_prompt)
+        execute_query = QuerySQLDataBaseTool(db=self.db)
+        
+        chain = RunnablePassthrough.assign(
+            query=SQLChain
+        ).assign(
+            result=itemgetter("query") | execute_query
+        ).assign(
+            rephrasedAnswer= answer_prompt | llm | StrOutputParser()
+        )
 
-def invoke_chain(question,history,db):
-    chain = get_chain(db)
-    response = chain.invoke({"question": question,"message_history":history})
-    result_list = ast.literal_eval(response['result'])
-    response['result']=pd.DataFrame(result_list)
-    return response
+        return chain
+
+    def invoke_chain(self, question, history):
+        response = self.chain.invoke({"question": question, "message_history": history})
+        result_list = ast.literal_eval(response['result'])
+        response['result'] = pd.DataFrame(result_list)
+        return response

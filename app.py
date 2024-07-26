@@ -8,7 +8,7 @@ from langchain_community.utilities import SQLDatabase
 import streamlit as st 
 import os
 
-from utilities.SQL import invoke_chain
+from utilities.SQL import SQLChain
 
 st.set_page_config(page_title="Chat with QueryBot", page_icon=":speech_balloon:", layout="wide")
 
@@ -21,7 +21,7 @@ if "chat_history" not in st.session_state:
 if "db" not in st.session_state:
     st.session_state.db=None
     
-def message_to_dict(message):
+def message_to_dict(message):  
     return {
         "role": "AI" if isinstance(message, AIMessage) else "Human",
         "content": message.content
@@ -102,7 +102,8 @@ if user_query:
         if user_query.lower() in specific_words_responses:
             response = specific_words_responses[user_query.lower()]
         else:
-            response=invoke_chain(user_query,st.session_state.chat_history,st.session_state.db)
+            chain=SQLChain(st.session_state.db)
+            response=chain.invoke_chain(user_query,st.session_state.chat_history)
             
         st.markdown(f"```sql\n{response['query']}\n```")
         st.dataframe(response['result'])
