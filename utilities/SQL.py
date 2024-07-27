@@ -33,19 +33,16 @@ sql_prompt = PromptTemplate.from_template(
     {message_history}
     
     Only use the following tables:
-    {table_info}
-
-    SQLQuery:'''
+    {table_info}'''
 )
 
 answer_prompt = PromptTemplate.from_template(
-    """Given the following user question, previous messages for context, corresponding SQL query, and SQL result, answer the user question. If the result from the database is a big table and is itself the answer no need to rephrase it or say it again.
-
+    """Given the following user question, previous messages for context, corresponding SQL query, and SQL result, answer the user question. If the SQL result is blank then the query returned nothing. If the SQL result is a table then dont use that table again in the answer you give.
+    
     Question: {question}
     Message History:{message_history}
     SQL Query: {query}
-    SQL Result: {result}
-    Answer: """
+    SQL Result: {result}"""
 )
 
 class SQLChain:
@@ -67,8 +64,15 @@ class SQLChain:
 
         return chain
 
+
     def invoke_chain(self, question, history):
         response = self.chain.invoke({"question": question, "message_history": history})
-        result_list = ast.literal_eval(response['result'])
-        response['result'] = pd.DataFrame(result_list)
+        
+        try:
+            if response['result'].strip():  
+                result_list = ast.literal_eval(response['result'])
+                response['result'] = pd.DataFrame(result_list)
+        except (ValueError, SyntaxError) as e:
+            print(f"Error converting result to DataFrame: {e}")
+        
         return response

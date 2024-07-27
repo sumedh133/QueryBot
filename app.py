@@ -6,7 +6,7 @@ if ENV_FILE:
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_community.utilities import SQLDatabase
 import streamlit as st 
-import os
+import pandas as pd
 
 from utilities.SQL import SQLChain
 
@@ -106,7 +106,10 @@ if user_query:
             response=chain.invoke_chain(user_query,st.session_state.chat_history)
             
         st.markdown(f"```sql\n{response['query']}\n```")
-        st.dataframe(response['result'])
+        if isinstance(response['result'], pd.DataFrame):
+             st.dataframe(response['result'])
+        else: 
+            st.write(f"{response['result']}")
         st.markdown(f"💡 {response['rephrasedAnswer']}")
     st.session_state.chat_history.append(HumanMessage(content=user_query))
     st.session_state.chat_history.append(AIMessage(content=response['rephrasedAnswer']))
