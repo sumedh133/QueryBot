@@ -88,6 +88,18 @@ else:
 # Main Title
 st.title("💬 Chat with QueryBot")
 
+# Sidebar for database information
+with st.sidebar:
+    st.header("Database Information")
+    if conversation_id:
+        st.write(f"**Database Type:** {db_type}")
+        st.write(f"**Host:** {host}")
+        st.write(f"**Port:** {port}")
+        st.write(f"**User:** {user}")
+        st.write(f"**Database:** {database}")
+    else:
+        st.write("No database information available")
+
 # Display chat history
 for message in st.session_state.chat_history:
     if isinstance(message, AIMessage):
