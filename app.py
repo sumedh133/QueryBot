@@ -144,7 +144,7 @@ if user_query:
             response = specific_words_responses[user_query.lower()]
             query_text = "N/A"
             rephrased_answer = response
-            result = response
+            result = None
         else:
             response = st.session_state.chain.invoke_chain(user_query, st.session_state.chat_history)
             query_text = response['query']
