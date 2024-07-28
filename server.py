@@ -135,5 +135,16 @@ def new_conversation():
     streamlit_url = f"http://localhost:8501?conversation_id={str(conversation_id)}"
     return jsonify({"success": True, "redirect_url": streamlit_url}), 201
 
+@app.route('/conversation/<conversation_id>', methods=['DELETE'])
+def delete_conversation(conversation_id):
+    try:
+        result = conversations_collection.delete_one({"_id": ObjectId(conversation_id)})
+        if result.deleted_count == 1:
+            return jsonify({"success": True}), 200
+        else:
+            return jsonify({"success": False, "message": "Conversation not found"}), 404
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=env.get("PORT", 3000))
