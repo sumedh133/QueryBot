@@ -8,7 +8,7 @@
   <!-- Mobile Metas -->
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <!-- Site Metas -->
-  <link rel="icon" href="images/fevicon.png" type="image/gif" />
+  <link rel="icon" href="/static/images/fevicon.png" type="image/gif" />
   <meta name="keywords" content="" />
   <meta name="description" content="" />
   <meta name="author" content="" />
@@ -116,7 +116,7 @@
                     <p>
                       QueryBot </p>
                     <div class="btn-box">
-                      <a href="read.html" class="btn-1">
+                      <a href=" {{ url_for('aboutUs') }}" class="btn-1">
                         Read More
                       </a>
                     </div>
@@ -146,7 +146,7 @@
                     <p>
                       QueryBot </p>
                     <div class="btn-box">
-                      <a href="read.html" class="btn-1">
+                      <a href="{{ url_for('aboutUs') }}" class="btn-1">
                         Read More
                       </a>
                     </div>
@@ -194,7 +194,7 @@
             </div>
             <p>
               This project is a Streamlit-based chatbot application that supports interaction with various types of files, including MYSQL, TXT, PDF, CSV and Excel files. It utilizes Google Generative AI for natural language processing and LangChain for handling and querying the text data. </p>
-            <a href="read.html">
+            <a href="{{ url_for('aboutUs') }}">
               Read More
             </a>
           </div>

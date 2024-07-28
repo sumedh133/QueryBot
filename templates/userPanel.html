@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Panel</title>
+</head>
+<body>
+    <a href="{{ url_for('logout') }}">Logout</a>
+    <h1>Welcome, {{ user.name }}</h1>
+    <p>Email: {{ user.email }}</p>
+    <p>Nickname: {{ user.nickname }}</p>
+    
+    <h2>Your Conversations</h2>
+    <ul>
+        {% for conversation in user.conversations %}
+            <li>{{ conversation._id }}</li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>

@@ -26,7 +26,7 @@ langfuse_handler = CallbackHandler(
 )
 
 sql_prompt = PromptTemplate.from_template(
-    '''Given an input question and previous messages for context first create a syntactically correct {dialect} query to run. Do not put the query you make in markdowns as sql, keep it as simple text. Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per SQLite.
+    '''Given an input question/query/instruction and previous messages for context first create a syntactically correct {dialect} query to run. Do not put the query you make in markdowns as sql, keep it as simple text. Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per {dialect}.
 
     Question: {input}
     Message history:
@@ -66,7 +66,7 @@ class SQLChain:
 
 
     def invoke_chain(self, question, history):
-        response = self.chain.invoke({"question": question, "message_history": history})
+        response = self.chain.invoke({"question": question, "message_history": history,"top_k":10})
         
         try:
             if response['result'].strip():  
