@@ -28,13 +28,21 @@ def message_to_dict(message):
         "content": message.content
     }
 
-def init_database(user: str, password: str, host: str, port: str, database: str) -> SQLDatabase:
-    db_uri = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+def init_database(db_type: str, user: str, password: str, host: str, port: str, database: str) -> SQLDatabase:
+    if db_type == 'MySQL':
+        db_uri = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+    elif db_type == 'PostgreSQL':
+        db_uri = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+    elif db_type == 'SQLite':
+        db_uri = f"sqlite:///{database}"
+    elif db_type == 'SQLServer':
+        db_uri = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver=ODBC+Driver+17+for+SQL+Server"
+    else:
+        raise ValueError("Unsupported database type")
     return SQLDatabase.from_uri(db_uri)
 
 # Extract URL parameters
-query_params = st.experimental_get_query_params()
-conversation_id = query_params.get("conversation_id", [None])[0]
+conversation_id = st.query_params.to_dict()['conversation_id']
 
 # Initialize session state
 if "chat_history" not in st.session_state:
@@ -49,6 +57,7 @@ if conversation_id:
     if conversation:
         # Load existing chat history
         if "messages" in conversation:
+            st.session_state.chat_history = []
             for msg in conversation["messages"]:
                 if msg["role"] == "AI":
                     st.session_state.chat_history.append(AIMessage(content=msg["content"]))
@@ -64,7 +73,7 @@ if conversation_id:
 
         # Initialize the database connection
         try:
-            st.session_state.db = init_database(user, password, host, port, database)
+            st.session_state.db = init_database(db_type, user, password, host, port, database)
             if st.session_state.db.get_usable_table_names():
                 st.success("Connected to database!")
                 st.session_state.chain = SQLChain(st.session_state.db)
@@ -85,17 +94,18 @@ for message in st.session_state.chat_history:
         try:
             ai_content = json.loads(message.content)
             with st.chat_message("AI"):
-                st.markdown(f"🟢 **Query:** {ai_content.get('query', 'N/A')}")
-                st.markdown(f"🟢 **Result:**")
-                if isinstance(ai_content.get('result'), str):
-                    st.text(ai_content['result'])
-                else:
-                    st.dataframe(pd.DataFrame(ai_content['result']))
-                st.markdown(f"💡 **Rephrased Answer:** {ai_content.get('rephrasedAnswer', '')}")
+                if ai_content.get('query') and ai_content.get('query') != 'N/A':
+                    st.markdown(f"```sql\n{ai_content.get('query')}\n```")
+                if ai_content.get('result'):
+                    if isinstance(ai_content.get('result'), str):
+                        st.text(ai_content['result'])
+                    else:
+                        st.dataframe(pd.DataFrame(ai_content['result']))
+                st.markdown(f"💡 {ai_content.get('rephrasedAnswer', '')}")
         except json.JSONDecodeError:
             # Fallback for older messages
             with st.chat_message("AI"):
-                st.markdown(f"🟢 {message.content}")
+                st.markdown(f"💡 {message.content}")
     elif isinstance(message, HumanMessage):
         with st.chat_message("Human"):
             st.markdown(f"✍️ {message.content}")
@@ -110,13 +120,16 @@ specific_words_responses = {
 
 user_query = st.chat_input("Type a message...")
 if user_query:
+    # Append the user message to chat history
+    st.session_state.chat_history.append(HumanMessage(content=user_query))
+
     with st.chat_message("Human"):
         st.markdown(f"✍️ {user_query}")
 
+    response = None
     with st.chat_message("AI"):
         if user_query.lower() in specific_words_responses:
             response = specific_words_responses[user_query.lower()]
-            response_text = response
             query_text = "N/A"
             rephrased_answer = response
             result = response
@@ -128,26 +141,23 @@ if user_query:
                 result = response['result'].to_dict()
             else:
                 result = response['result']
-            response_text = f"```sql\n{response['query']}\n```\n"
-            response_text += f"{result}\n"
-            response_text += f"💡 {response['rephrasedAnswer']}"
-
-        st.markdown(f"**Query:** {query_text}")
-        st.markdown(f"**Result:**")
-        if isinstance(result, str):
-            st.text(result)
-        else:
-            st.dataframe(pd.DataFrame(result))
+        
+        if query_text and query_text != 'N/A':
+            st.markdown(f"```sql\n{query_text}\n```")
+        if result:
+            if isinstance(result, str):
+                st.text(result)
+            else:
+                st.dataframe(pd.DataFrame(result))
         st.markdown(f"💡 {rephrased_answer}")
 
-    # Append messages to chat history
-    st.session_state.chat_history.append(HumanMessage(content=user_query))
-    ai_message_content = {
-        "query": query_text,
-        "result": result,
-        "rephrasedAnswer": rephrased_answer
-    }
-    st.session_state.chat_history.append(AIMessage(content=json.dumps(ai_message_content)))
+        # Append the AI response to chat history
+        ai_message_content = {
+            "query": query_text,
+            "result": result,
+            "rephrasedAnswer": rephrased_answer
+        }
+        st.session_state.chat_history.append(AIMessage(content=json.dumps(ai_message_content)))
 
     # Store chat history in MongoDB
     conversations_collection.update_one(

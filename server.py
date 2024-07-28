@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify, redirect, render_template, session, url_for
 from pymongo import MongoClient
 from bson import ObjectId
-import json
 from os import environ as env
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
@@ -139,12 +138,22 @@ def new_conversation():
 def delete_conversation(conversation_id):
     try:
         result = conversations_collection.delete_one({"_id": ObjectId(conversation_id)})
+        
         if result.deleted_count == 1:
+            user = users_collection.find_one({"conversations": ObjectId(conversation_id)})
+            
+            if user:
+                users_collection.update_one(
+                    {"_id": user["_id"]},
+                    {"$pull": {"conversations": ObjectId(conversation_id)}}
+                )
+            
             return jsonify({"success": True}), 200
         else:
             return jsonify({"success": False, "message": "Conversation not found"}), 404
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=env.get("PORT", 3000))
