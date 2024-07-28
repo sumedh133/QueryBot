@@ -50,6 +50,9 @@ if "chat_history" not in st.session_state:
 
 if "db" not in st.session_state:
     st.session_state.db = None
+    
+st.button("⚙️ Settings")
+
 
 # Load conversation if conversation_id is provided
 if conversation_id:

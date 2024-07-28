@@ -66,8 +66,7 @@ class SQLChain:
 
 
     def invoke_chain(self, question, history):
-        response = self.chain.invoke({"question": question, "message_history": history,"top_k":10})
-        
+        response = self.chain.invoke({"question": question, "message_history": history,"top_k":10},config={"callbacks": [langfuse_handler]})
         try:
             if response['result'].strip():  
                 result_list = ast.literal_eval(response['result'])
