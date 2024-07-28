@@ -3,19 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <title>User Panel</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </head>
 <body>
-    <a href="{{ url_for('logout') }}">Logout</a>
-    <h1>Welcome, {{ user.name }}</h1>
-    <p>Email: {{ user.email }}</p>
-    <p>Nickname: {{ user.nickname }}</p>
-    
-    <h2>Your Conversations</h2>
-    <ul>
-        {% for conversation in user.conversations %}
-            <li>{{ conversation._id }}</li>
-        {% endfor %}
-    </ul>
+    <div class="container">
+        <h1>Welcome, {{ user["name"] }}</h1>
+        <button class="btn btn-primary" data-toggle="modal" data-target="#addConversationModal">Add Conversation</button>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
 
+        <!-- Conversations List -->
+        <div id="conversationsList" style="margin-top: 20px;">
+            <h3>Your Conversations</h3>
+            <ul class="list-group" id="conversationsUl">
+                {% for conversation in conversations %}
+                    <li class="list-group-item">
+                        <!-- <strong>Conversation ID:</strong> {{ conversation._id }}<br> -->
+                        <strong>Database Type:</strong> {{ conversation.db_type }}<br>
+                        <strong>Host:</strong> {{ conversation.host }}<br>
+                        <strong>Port:</strong> {{ conversation.port }}<br>
+                        <strong>User:</strong> {{ conversation.user }}<br>
+                        <strong>Database:</strong> {{ conversation.database }}<br>
+                        <strong>Timestamp:</strong> {{ conversation.timestamp }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Add Conversation Modal -->
+    <div class="modal fade" id="addConversationModal" tabindex="-1" aria-labelledby="addConversationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="addConversationForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addConversationModalLabel">Add Conversation</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="dbType">Database Type</label>
+                            <select id="dbType" name="dbType" class="form-control">
+                                <option value="">Select a database</option>
+                                <option value="MySQL">MySQL</option>
+                                <option value="PostgreSQL">PostgreSQL</option>
+                                <option value="SQLite">SQLite</option>
+                                <option value="SQLServer">SQL Server</option>
+                                <!-- Add other database types as needed -->
+                            </select>
+                        </div>
+                        <div id="dbFields" style="display: none;">
+                            <div class="form-group">
+                                <label for="host">Host</label>
+                                <input type="text" id="host" name="host" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="port">Port</label>
+                                <input type="text" id="port" name="port" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="user">User</label>
+                                <input type="text" id="user" name="user" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" name="password" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="database">Database</label>
+                                <input type="text" id="database" name="database" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" id="saveConversationBtn" class="btn btn-primary">Save Conversation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#dbType').change(function() {
+                if ($(this).val() === "MySQL" || $(this).val() === "PostgreSQL" || $(this).val() === "SQLite" || $(this).val() === "SQLServer") {
+                    $('#dbFields').show();
+                } else {
+                    $('#dbFields').hide();
+                }
+            });
+    
+            $('#saveConversationBtn').click(function() {
+                var formData = $('#addConversationForm').serialize();
+                console.log("Form data to be sent:", formData);
+                $.post('/conversation', formData, function(response) {
+                    console.log("Server response:", response);  // Log the response to see if it’s successful
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                })
+            });
+        });
+    </script>
+    
+    
 </body>
 </html>

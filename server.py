@@ -6,6 +6,7 @@ from os import environ as env
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from dotenv import find_dotenv, load_dotenv
+import datetime
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -44,16 +45,16 @@ def callback():
     user_info = token['userinfo']
 
     user = users_collection.find_one({"sub": user_info["sub"]})
-    if not user:#first time login i.e. registration
+    if not user:  # first time login i.e. registration
         user_id = users_collection.insert_one(user_info).inserted_id
         user_info['_id'] = str(user_id)  
-    else:#login
+    else:  # login
         user_info['_id'] = str(user['_id'])
     
     session["user"] = user_info
     return redirect(url_for("userPanel"))
 
-@app.route("/logout",methods=["GET", "POST"])
+@app.route("/logout", methods=["GET", "POST"])
 def logout():
     session.clear()
     return redirect(
@@ -67,18 +68,7 @@ def logout():
             quote_via=quote_plus,
         )
     )
-    
-@app.route("/userPanel")
-def userPanel():
-    user_info = session.get("user")
-    if user_info:
-        user_id = user_info["_id"]
-        user = users_collection.find_one({"_id": ObjectId(user_id)})
-        if user:
-            user["_id"] = str(user["_id"])
-            return render_template("userPanel.html", user=user)
-    return redirect(url_for("home"))#userPanel failed i.e user not found but login successfull
-    
+
 @app.route("/")
 def home():
     if "user" in session:
@@ -88,6 +78,66 @@ def home():
 @app.route('/aboutUs')
 def aboutUs():
     return render_template('aboutUs.html')
+
+@app.route("/userPanel")
+def userPanel():
+    user_info = session.get("user")
+    if user_info:
+        user_id = user_info["_id"]
+        user = users_collection.find_one({"_id": ObjectId(user_id)})
+        if user:
+            user["_id"] = str(user["_id"])
+
+            # Fetch conversations
+            conversations = []
+            if "conversations" in user:
+                for conv_id in user["conversations"]:
+                    conversation = conversations_collection.find_one({"_id": ObjectId(conv_id)})
+                    if conversation:
+                        conversation["_id"] = str(conversation["_id"])
+                        conversations.append(conversation)
+
+            return render_template("userPanel.html", user=user, conversations=conversations)
+    return redirect(url_for("home"))
+
+@app.route('/conversation', methods=['POST'])
+def new_conversation():
+    try:
+        user_info = session.get("user")
+        if not user_info:
+            return jsonify({"success": False, "message": "User not authenticated"}), 401
+
+        db_type = request.form.get("dbType")
+        host = request.form.get("host")
+        port = request.form.get("port")
+        user = request.form.get("user")
+        password = request.form.get("password")
+        database = request.form.get("database")
+        print(db_type)
+        
+        # Create the conversation with connection details
+        conversation = {
+            "user_id": ObjectId(user_info["_id"]),
+            "db_type": db_type,
+            "host": host,
+            "port": port,
+            "user": user,
+            "password": password,
+            "database": database,
+            "messages": [],
+            "timestamp": datetime.datetime.utcnow()
+        }
+        conversation_id = conversations_collection.insert_one(conversation).inserted_id
+        
+        users_collection.update_one(
+            {"_id": ObjectId(user_info["_id"])},
+            {"$push": {"conversations": conversation_id}}
+        )
+        
+        return jsonify({"success": True, "conversation_id": str(conversation_id)}), 201
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=env.get("PORT", 3000))
