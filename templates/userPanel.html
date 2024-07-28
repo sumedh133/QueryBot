@@ -18,15 +18,14 @@
             <h3>Your Conversations</h3>
             <ul class="list-group" id="conversationsUl">
                 {% for conversation in conversations %}
-                    <li class="list-group-item">
-                        <!-- <strong>Conversation ID:</strong> {{ conversation._id }}<br> -->
+                    <a href="http://localhost:8501?conversation_id={{ conversation._id }}" class="list-group-item list-group-item-action">
                         <strong>Database Type:</strong> {{ conversation.db_type }}<br>
                         <strong>Host:</strong> {{ conversation.host }}<br>
                         <strong>Port:</strong> {{ conversation.port }}<br>
                         <strong>User:</strong> {{ conversation.user }}<br>
                         <strong>Database:</strong> {{ conversation.database }}<br>
                         <strong>Timestamp:</strong> {{ conversation.timestamp }}
-                    </li>
+                    </a>
                 {% endfor %}
             </ul>
         </div>
@@ -99,19 +98,15 @@
     
             $('#saveConversationBtn').click(function() {
                 var formData = $('#addConversationForm').serialize();
-                console.log("Form data to be sent:", formData);
                 $.post('/conversation', formData, function(response) {
-                    console.log("Server response:", response);  // Log the response to see if it’s successful
                     if (response.success) {
-                        location.reload();
+                        window.location.href = response.redirect_url;
                     } else {
                         alert('Error: ' + response.message);
                     }
-                })
+                });
             });
         });
     </script>
-    
-    
 </body>
 </html>

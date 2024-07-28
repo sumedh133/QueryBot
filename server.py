@@ -102,42 +102,38 @@ def userPanel():
 
 @app.route('/conversation', methods=['POST'])
 def new_conversation():
-    try:
-        user_info = session.get("user")
-        if not user_info:
-            return jsonify({"success": False, "message": "User not authenticated"}), 401
+    user_info = session.get("user")
+    if not user_info:
+        return jsonify({"success": False, "message": "User not authenticated"}), 401
 
-        db_type = request.form.get("dbType")
-        host = request.form.get("host")
-        port = request.form.get("port")
-        user = request.form.get("user")
-        password = request.form.get("password")
-        database = request.form.get("database")
-        print(db_type)
-        
-        # Create the conversation with connection details
-        conversation = {
-            "user_id": ObjectId(user_info["_id"]),
-            "db_type": db_type,
-            "host": host,
-            "port": port,
-            "user": user,
-            "password": password,
-            "database": database,
-            "messages": [],
-            "timestamp": datetime.datetime.utcnow()
-        }
-        conversation_id = conversations_collection.insert_one(conversation).inserted_id
-        
-        users_collection.update_one(
-            {"_id": ObjectId(user_info["_id"])},
-            {"$push": {"conversations": conversation_id}}
-        )
-        
-        return jsonify({"success": True, "conversation_id": str(conversation_id)}), 201
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
+    db_type = request.form.get("dbType")
+    host = request.form.get("host")
+    port = request.form.get("port")
+    user = request.form.get("user")
+    password = request.form.get("password")
+    database = request.form.get("database")
+    
+    # Create the conversation with connection details
+    conversation = {
+        "user_id": ObjectId(user_info["_id"]),
+        "db_type": db_type,
+        "host": host,
+        "port": port,
+        "user": user,
+        "password": password,
+        "database": database,
+        "messages": [],
+        "timestamp": datetime.datetime.utcnow()
+    }
+    conversation_id = conversations_collection.insert_one(conversation).inserted_id
+    
+    users_collection.update_one(
+        {"_id": ObjectId(user_info["_id"])},
+        {"$push": {"conversations": conversation_id}}
+    )
+    
+    streamlit_url = f"http://localhost:8501?conversation_id={str(conversation_id)}"
+    return jsonify({"success": True, "redirect_url": streamlit_url}), 201
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=env.get("PORT", 3000))
